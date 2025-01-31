@@ -24,10 +24,11 @@ module Ameba::Rule::Lint
   # ```
   class RandZero < Base
     properties do
+      since_version "0.5.1"
       description "Disallows rand zero calls"
     end
 
-    MSG = "%s always returns 0"
+    MSG = "`%s` always returns `0`"
 
     def test(source, node : Crystal::Call)
       return unless node.name == "rand" &&

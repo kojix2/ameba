@@ -1,19 +1,19 @@
 require "../../../spec_helper"
 
-module Ameba
-  subject = Rule::Naming::VariableNames.new
-
-  private def it_reports_var_name(name, value, expected, *, file = __FILE__, line = __LINE__)
-    it "reports variable name #{expected}", file, line do
-      rule = Rule::Naming::VariableNames.new
-      expect_issue rule, <<-CRYSTAL, name: name, file: file, line: line
-          %{name} = #{value}
-        # ^{name} error: Var name should be underscore-cased: #{expected}, not %{name}
-        CRYSTAL
-    end
+private def it_reports_var_name(name, value, expected, *, file = __FILE__, line = __LINE__)
+  it "reports variable name #{expected}", file, line do
+    rule = Ameba::Rule::Naming::VariableNames.new
+    expect_issue rule, <<-CRYSTAL, name: name, file: file, line: line
+        %{name} = #{value}
+      # ^{name} error: Variable name should be underscore-cased: `#{expected}`, not `%{name}`
+      CRYSTAL
   end
+end
 
-  describe Rule::Naming::VariableNames do
+module Ameba::Rule::Naming
+  describe VariableNames do
+    subject = VariableNames.new
+
     it "passes if var names are underscore-cased" do
       expect_no_issues subject, <<-CRYSTAL
         class Greeting
@@ -37,7 +37,7 @@ module Ameba
       expect_issue subject, <<-CRYSTAL
         class Greeting
           def initialize(@badNamed = nil)
-                       # ^ error: Var name should be underscore-cased: @bad_named, not @badNamed
+                       # ^ error: Variable name should be underscore-cased: `@bad_named`, not `@badNamed`
           end
         end
         CRYSTAL
@@ -47,8 +47,8 @@ module Ameba
       expect_issue subject, <<-CRYSTAL
         class Location
           def at(@startLocation = nil, @endLocation = nil)
-               # ^ error: Var name should be underscore-cased: @start_location, not @startLocation
-                                     # ^ error: Var name should be underscore-cased: @end_location, not @endLocation
+               # ^ error: Variable name should be underscore-cased: `@start_location`, not `@startLocation`
+                                     # ^ error: Variable name should be underscore-cased: `@end_location`, not `@endLocation`
           end
         end
         CRYSTAL
@@ -58,7 +58,7 @@ module Ameba
       expect_issue subject, <<-CRYSTAL
         class Greeting
           @@defaultGreeting = "Hello world"
-        # ^^^^^^^^^^^^^^^^^ error: Var name should be underscore-cased: @@default_greeting, not @@defaultGreeting
+        # ^^^^^^^^^^^^^^^^^ error: Variable name should be underscore-cased: `@@default_greeting`, not `@@defaultGreeting`
         end
         CRYSTAL
     end

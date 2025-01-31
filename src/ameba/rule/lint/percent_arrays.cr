@@ -25,13 +25,14 @@ module Ameba::Rule::Lint
   # ```
   class PercentArrays < Base
     properties do
+      since_version "0.3.0"
       description "Disallows some unwanted symbols in percent array literals"
 
       string_array_unwanted_symbols %(,")
       symbol_array_unwanted_symbols %(,:)
     end
 
-    MSG = "Symbols `%s` may be unwanted in %s array literals"
+    MSG = "Symbols `%s` may be unwanted in `%s` array literals"
 
     def test(source)
       issue = start_token = nil

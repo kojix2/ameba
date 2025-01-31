@@ -7,10 +7,10 @@ module Ameba::Formatter
     include Util
 
     @started_at : Time::Span?
-    @mutex = Thread::Mutex.new
+    @mutex = Mutex.new
 
     # Reports a message when inspection is started.
-    def started(sources)
+    def started(sources) : Nil
       @started_at = Time.monotonic
 
       output.puts started_message(sources.size)
@@ -18,13 +18,13 @@ module Ameba::Formatter
     end
 
     # Reports a result of the inspection of a corresponding source.
-    def source_finished(source : Source)
+    def source_finished(source : Source) : Nil
       sym = source.valid? ? ".".colorize(:green) : "F".colorize(:red)
       @mutex.synchronize { output << sym }
     end
 
     # Reports a message when inspection is finished.
-    def finished(sources)
+    def finished(sources) : Nil
       output.flush
       output << "\n\n"
 
@@ -77,34 +77,12 @@ module Ameba::Formatter
       "Finished in #{to_human(finished - started)}".colorize(:default)
     end
 
-    private def to_human(span : Time::Span)
-      total_milliseconds = span.total_milliseconds
-      if total_milliseconds < 1
-        return "#{(span.total_milliseconds * 1_000).round.to_i} microseconds"
-      end
-
-      total_seconds = span.total_seconds
-      if total_seconds < 1
-        return "#{span.total_milliseconds.round(2)} milliseconds"
-      end
-
-      if total_seconds < 60
-        return "#{total_seconds.round(2)} seconds"
-      end
-
-      minutes = span.minutes
-      seconds = span.seconds
-
-      "#{minutes}:#{seconds < 10 ? "0" : ""}#{seconds} minutes"
-    end
-
     private def final_message(sources, failed_sources)
       total = sources.size
-      failures = failed_sources.sum(&.issues.size)
+      failures = failed_sources.sum(&.issues.count(&.enabled?))
       color = failures == 0 ? :green : :red
-      s = failures != 1 ? "s" : ""
 
-      "#{total} inspected, #{failures} failure#{s}".colorize(color)
+      "#{total} inspected, #{failures} #{pluralize(failures, "failure")}".colorize(color)
     end
   end
 end

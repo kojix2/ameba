@@ -174,6 +174,7 @@ In this example we define default globs and exclude `src/compiler` folder:
 ``` yaml
 Globs:
   - "**/*.cr"
+  - "**/*.ecr"
   - "!lib"
 
 Excluded:
@@ -232,8 +233,8 @@ time = Time.epoch(1483859302) # ameba:disable Style, Lint
 ## Credits & inspirations
 
 - [Crystal Language](https://crystal-lang.org)
-- [Rubocop](https://rubocop.readthedocs.io/en/latest/)
-- [Credo](http://credo-ci.org/)
+- [Rubocop](https://rubocop.org)
+- [Credo](http://credo-ci.org)
 - [Dogma](https://github.com/lpil/dogma)
 
 ## Contributors

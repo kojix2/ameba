@@ -55,6 +55,7 @@ module Ameba::Rule::Style
     include AST::Util
 
     properties do
+      since_version "1.0.0"
       enabled false
       description "Check for conditionals that can be replaced with guard clauses"
     end
@@ -177,7 +178,7 @@ module Ameba::Rule::Style
       end
     end
 
-    def guard_clause_source(source, guard_clause, parent)
+    private def guard_clause_source(source, guard_clause, parent)
       node = parent.is_a?(Crystal::BinaryOp) ? parent : guard_clause
 
       node_source(node, source.lines)

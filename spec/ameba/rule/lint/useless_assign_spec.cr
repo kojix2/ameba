@@ -3,7 +3,7 @@ require "../../../spec_helper"
 module Ameba::Rule::Lint
   describe UselessAssign do
     subject = UselessAssign.new
-      .tap(&.exclude_type_declarations = false)
+    subject.exclude_type_declarations = false
 
     it "does not report used assignments" do
       expect_no_issues subject, <<-CRYSTAL
@@ -513,6 +513,20 @@ module Ameba::Rule::Lint
             CRYSTAL
         end
 
+        it "doesn't report if assignment is referenced within a method call" do
+          expect_no_issues subject, <<-CRYSTAL
+            if v = rand
+              puts(v = 1)
+            end
+            v
+            CRYSTAL
+
+          expect_no_issues subject, <<-CRYSTAL
+            puts v = 1 unless v = rand
+            v
+            CRYSTAL
+        end
+
         it "reports if assignment is useless in the branch" do
           expect_issue subject, <<-CRYSTAL
             def method(a)
@@ -997,6 +1011,18 @@ module Ameba::Rule::Lint
           CRYSTAL
       end
 
+      it "reports if it's not referenced at a top level + in a method" do
+        expect_issue subject, <<-CRYSTAL
+          a : String?
+          # ^{} error: Useless assignment to variable `a`
+
+          def foo
+            b : String?
+          # ^ error: Useless assignment to variable `b`
+          end
+          CRYSTAL
+      end
+
       it "reports if it's not referenced in a method" do
         expect_issue subject, <<-CRYSTAL
           def foo
@@ -1061,6 +1087,18 @@ module Ameba::Rule::Lint
         expect_issue subject, <<-CRYSTAL
           a = uninitialized U
           # ^{} error: Useless assignment to variable `a`
+          CRYSTAL
+      end
+
+      it "reports if uninitialized assignment is not referenced at a top level + in a method" do
+        expect_issue subject, <<-CRYSTAL
+          a = uninitialized U
+          # ^{} error: Useless assignment to variable `a`
+
+          def foo
+            b = uninitialized U
+          # ^ error: Useless assignment to variable `b`
+          end
           CRYSTAL
       end
 

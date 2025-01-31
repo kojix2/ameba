@@ -1,5 +1,5 @@
 module Ameba::Rule::Lint
-  # A rule that disallows useless conditions in when clause
+  # A rule that disallows useless conditions in `when` clause
   # where it is guaranteed to always return the same result.
   #
   # For example, this is considered invalid:
@@ -32,10 +32,11 @@ module Ameba::Rule::Lint
   # ```
   class UselessConditionInWhen < Base
     properties do
-      description "Disallows useless conditions in when"
+      since_version "0.3.0"
+      description "Disallows useless conditions in `when`"
     end
 
-    MSG = "Useless condition in when detected"
+    MSG = "Useless condition in `when` detected"
 
     # TODO: condition *cond* may be a complex ASTNode with
     # useless inner conditions. We might need to improve this
@@ -51,7 +52,6 @@ module Ameba::Rule::Lint
       ConditionInWhenVisitor.new self, source, node
     end
 
-    # :nodoc:
     private class ConditionInWhenVisitor < Crystal::Visitor
       @source : Source
       @rule : UselessConditionInWhen

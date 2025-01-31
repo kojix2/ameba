@@ -31,6 +31,7 @@ module Ameba::Rule::Performance
   #   Enabled: true
   #   CallNames:
   #     - uniq
+  #     - unstable_sort
   #     - sort
   #     - sort_by
   #     - shuffle
@@ -40,12 +41,13 @@ module Ameba::Rule::Performance
     include AST::Util
 
     properties do
+      since_version "0.14.0"
       description "Identifies usage of chained calls not utilizing the bang method variants"
 
       # All of those have bang method variants returning `self`
       # and are not modifying the receiver type (like `compact` does),
       # thus are safe to switch to the bang variant.
-      call_names %w[uniq sort sort_by shuffle reverse]
+      call_names %w[uniq unstable_sort sort sort_by shuffle reverse]
     end
 
     MSG = "Use bang method variant `%s!` after chained `%s` call"
@@ -55,7 +57,7 @@ module Ameba::Rule::Performance
       keys values values_at map map_with_index flat_map compact_map
       flatten compact select reject sample group_by chunks tally merge
       combinations repeated_combinations permutations repeated_permutations
-      transpose invert chars captures named_captures clone
+      transpose invert split chars lines captures named_captures clone
     ]
 
     def test(source)

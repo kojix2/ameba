@@ -39,10 +39,11 @@ module Ameba::Rule::Naming
   # ```
   class MethodNames < Base
     properties do
+      since_version "0.2.0"
       description "Enforces method names to be in underscored case"
     end
 
-    MSG = "Method name should be underscore-cased: %s, not %s"
+    MSG = "Method name should be underscore-cased: `%s`, not `%s`"
 
     def test(source, node : Crystal::Def)
       name = node.name.to_s

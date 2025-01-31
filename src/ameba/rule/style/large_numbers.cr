@@ -28,12 +28,13 @@ module Ameba::Rule::Style
   # ```
   class LargeNumbers < Base
     properties do
+      since_version "0.2.0"
       enabled false
       description "Disallows usage of large numbers without underscore"
       int_min_digits 6
     end
 
-    MSG = "Large numbers should be written with underscores: %s"
+    MSG = "Large numbers should be written with underscores: `%s`"
 
     def test(source)
       Tokenizer.new(source).run do |token|

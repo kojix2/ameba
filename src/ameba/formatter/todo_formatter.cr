@@ -3,10 +3,12 @@ module Ameba::Formatter
   # Basically, it takes all issues reported and disables corresponding rules
   # or excludes failed sources from these rules.
   class TODOFormatter < DotFormatter
-    def initialize(@output = STDOUT, @config_path : Path = Config::DEFAULT_PATH)
+    @config_path : Path
+
+    def initialize(@output = STDOUT, @config_path = Config::DEFAULT_PATH)
     end
 
-    def finished(sources)
+    def finished(sources) : Nil
       super
 
       issues = sources.flat_map(&.issues)
@@ -20,12 +22,12 @@ module Ameba::Formatter
         return
       end
 
-      generate_todo_config(issues).tap do |file|
-        @output.puts "Created #{file.path}"
-      end
+      generate_todo_config(issues)
+
+      @output.puts "Created #{@config_path}"
     end
 
-    private def generate_todo_config(issues)
+    private def generate_todo_config(issues) : Nil
       File.open(@config_path, mode: "w") do |file|
         file << header
 
@@ -39,7 +41,6 @@ module Ameba::Formatter
           file << "\n# Run `ameba --only #{rule.name}` for details"
           file << rule_todo
         end
-        file
       end
     end
 
@@ -60,6 +61,8 @@ module Ameba::Formatter
         # on #{Time.utc} using Ameba version #{VERSION}.
         # The point is for the user to remove these configuration records
         # one by one as the reported problems are removed from the code base.
+
+        Version: "#{VERSION}"
 
         HEADER
     end

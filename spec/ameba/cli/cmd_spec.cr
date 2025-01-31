@@ -32,6 +32,18 @@ module Ameba::Cli
         end
       end
 
+      %w[-u --up-to-version].each do |flag|
+        it "accepts #{flag} flag" do
+          c = Cli.parse_args [flag, "1.5.0"]
+          c.version.should eq "1.5.0"
+        end
+      end
+
+      it "accepts --stdin-filename flag" do
+        c = Cli.parse_args %w[--stdin-filename foo.cr]
+        c.stdin_filename.should eq "foo.cr"
+      end
+
       it "accepts --only flag" do
         c = Cli.parse_args ["--only", "RULE1,RULE2"]
         c.only.should eq %w[RULE1 RULE2]
@@ -54,7 +66,7 @@ module Ameba::Cli
 
       it "accepts --rules flag" do
         c = Cli.parse_args %w[--rules]
-        c.rules?.should eq true
+        c.rules?.should be_true
       end
 
       it "defaults all? flag to false" do
@@ -64,7 +76,7 @@ module Ameba::Cli
 
       it "accepts --all flag" do
         c = Cli.parse_args %w[--all]
-        c.all?.should eq true
+        c.all?.should be_true
       end
 
       it "accepts --gen-config flag" do
@@ -154,6 +166,11 @@ module Ameba::Cli
       it "accepts unknown args as globs" do
         c = Cli.parse_args %w[source1.cr source2.cr]
         c.globs.should eq %w[source1.cr source2.cr]
+      end
+
+      it "accepts single '-' argument as STDIN" do
+        c = Cli.parse_args %w[-]
+        c.stdin_filename.should eq "-"
       end
 
       it "accepts one unknown arg as explain location if it has correct format" do

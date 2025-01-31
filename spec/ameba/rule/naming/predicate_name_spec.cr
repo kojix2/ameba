@@ -1,9 +1,9 @@
 require "../../../spec_helper"
 
 module Ameba::Rule::Naming
-  subject = PredicateName.new
-
   describe PredicateName do
+    subject = PredicateName.new
+
     it "passes if predicate name is correct" do
       expect_no_issues subject, <<-CRYSTAL
         def valid?(x)
@@ -23,16 +23,16 @@ module Ameba::Rule::Naming
       expect_issue subject, <<-CRYSTAL
         class Image
           def self.is_valid?(x)
-                 # ^^^^^^^^^ error: Favour method name 'valid?' over 'is_valid?'
+                 # ^^^^^^^^^ error: Favour method name `valid?` over `is_valid?`
           end
         end
 
         def is_valid?(x)
-          # ^^^^^^^^^ error: Favour method name 'valid?' over 'is_valid?'
+          # ^^^^^^^^^ error: Favour method name `valid?` over `is_valid?`
         end
 
         def is_valid(x)
-          # ^^^^^^^^ error: Favour method name 'valid?' over 'is_valid'
+          # ^^^^^^^^ error: Favour method name `valid?` over `is_valid`
         end
         CRYSTAL
     end

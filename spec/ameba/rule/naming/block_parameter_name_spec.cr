@@ -1,17 +1,23 @@
 require "../../../spec_helper"
 
 module Ameba::Rule::Naming
-  subject = BlockParameterName.new
-    .tap(&.min_name_length = 3)
-    .tap(&.allowed_names = %w[_ e i j k v])
-
   describe BlockParameterName do
+    subject = BlockParameterName.new
+    subject.min_name_length = 3
+    subject.allowed_names = %w[e i j k v]
+
     it "passes if block parameter name matches #allowed_names" do
       subject.allowed_names.each do |name|
         expect_no_issues subject, <<-CRYSTAL
           %w[].each { |#{name}| }
           CRYSTAL
       end
+    end
+
+    it "passes if block parameter name starts with '_'" do
+      expect_no_issues subject, <<-CRYSTAL
+        %w[].each { |_, _foo, _bar| }
+        CRYSTAL
     end
 
     it "fails if block parameter name doesn't match #allowed_names" do

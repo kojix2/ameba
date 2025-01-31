@@ -24,6 +24,17 @@ module Ameba
     end
   end
 
+  class VersionedRule < Rule::Base
+    properties do
+      since_version "1.5.0"
+      description "Rule with a custom version."
+    end
+
+    def test(source)
+      issue_for({1, 1}, "This rule always adds an error")
+    end
+  end
+
   # Rule extended description
   class ErrorRule < Rule::Base
     properties do
@@ -48,6 +59,20 @@ module Ameba
 
     def test(source, node : Crystal::ASTNode, scope : AST::Scope)
       @scopes << scope
+    end
+  end
+
+  class SelfCallsRule < Rule::Base
+    @[YAML::Field(ignore: true)]
+    getter call_queue = {} of AST::Scope => Array(Crystal::Call)
+
+    properties do
+      description "Internal rule to self calls in test scopes"
+    end
+
+    def test(source, node : Crystal::Call, scope : AST::Scope)
+      @call_queue[scope] ||= [] of Crystal::Call
+      @call_queue[scope] << node
     end
   end
 
@@ -271,7 +296,7 @@ module Ameba
     end
 
     {% for node in NODES %}
-      {{ getter_name = node.stringify.split("::").last.underscore + "_nodes" }}
+      {% getter_name = node.stringify.split("::").last.underscore + "_nodes" %}
 
       getter {{ getter_name.id }} = [] of {{ node }}
 
@@ -283,19 +308,26 @@ module Ameba
   end
 end
 
-def with_presenter(klass, &)
+def with_presenter(klass, *args, deansify = true, **kwargs, &)
   io = IO::Memory.new
+
   presenter = klass.new(io)
+  presenter.run(*args, **kwargs)
 
-  yield presenter, io
+  output = io.to_s
+  output = Ameba::Formatter::Util.deansify(output).to_s if deansify
+
+  yield presenter, output
 end
 
-def as_node(source)
-  Crystal::Parser.new(source).parse
+def as_node(source, *, wants_doc = false)
+  Crystal::Parser.new(source)
+    .tap(&.wants_doc = wants_doc)
+    .parse
 end
 
-def as_nodes(source)
-  Ameba::TestNodeVisitor.new(as_node source)
+def as_nodes(source, *, wants_doc = false)
+  Ameba::TestNodeVisitor.new(as_node(source, wants_doc: wants_doc))
 end
 
 def trailing_whitespace

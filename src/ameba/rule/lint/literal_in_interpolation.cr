@@ -19,15 +19,20 @@ module Ameba::Rule::Lint
     include AST::Util
 
     properties do
+      since_version "0.1.0"
       description "Disallows useless string interpolations"
     end
 
     MSG = "Literal value found in interpolation"
 
     def test(source, node : Crystal::StringInterpolation)
-      node.expressions
-        .select { |exp| !exp.is_a?(Crystal::StringLiteral) && literal?(exp) }
-        .each { |exp| issue_for exp, MSG }
+      each_literal_node(node) { |exp| issue_for exp, MSG }
+    end
+
+    private def each_literal_node(node, &)
+      node.expressions.each do |exp|
+        yield exp if !exp.is_a?(Crystal::StringLiteral) && literal?(exp)
+      end
     end
   end
 end

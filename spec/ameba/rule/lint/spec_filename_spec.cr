@@ -1,9 +1,9 @@
 require "../../../spec_helper"
 
 module Ameba::Rule::Lint
-  subject = SpecFilename.new
-
   describe SpecFilename do
+    subject = SpecFilename.new
+
     it "passes if relative file path does not start with `spec/`" do
       expect_no_issues subject, code: "", path: "src/spec/foo.cr"
       expect_no_issues subject, code: "", path: "src/spec/foo/bar.cr"
@@ -22,7 +22,7 @@ module Ameba::Rule::Lint
     it "fails if filename is wrong" do
       expect_issue subject, <<-CRYSTAL, path: "spec/foo.cr"
 
-        # ^{} error: Spec filename should have `_spec` suffix: foo_spec.cr, not foo.cr
+        # ^{} error: Spec filename should have `_spec` suffix: `foo_spec.cr`, not `foo.cr`
         CRYSTAL
     end
 

@@ -1,19 +1,19 @@
 require "../../../spec_helper"
 
-module Ameba
-  subject = Rule::Naming::TypeNames.new
-
-  private def it_reports_name(type, name, expected, *, file = __FILE__, line = __LINE__)
-    it "reports type name #{expected}", file, line do
-      rule = Rule::Naming::TypeNames.new
-      expect_issue rule, <<-CRYSTAL, type: type, name: name, file: file, line: line
-        %{type}   %{name}; end
-        _{type} # ^{name} error: Type name should be camelcased: #{expected}, but it was %{name}
-        CRYSTAL
-    end
+private def it_reports_name(type, name, expected, *, file = __FILE__, line = __LINE__)
+  it "reports type name #{expected}", file, line do
+    rule = Ameba::Rule::Naming::TypeNames.new
+    expect_issue rule, <<-CRYSTAL, type: type, name: name, file: file, line: line
+      %{type}   %{name}; end
+      _{type} # ^{name} error: Type name should be camelcased: `#{expected}`, not `%{name}`
+      CRYSTAL
   end
+end
 
-  describe Rule::Naming::TypeNames do
+module Ameba::Rule::Naming
+  describe TypeNames do
+    subject = TypeNames.new
+
     it "passes if type names are camelcased" do
       expect_no_issues subject, <<-CRYSTAL
         class ParseError < Exception
@@ -46,7 +46,7 @@ module Ameba
     it "reports alias name" do
       expect_issue subject, <<-CRYSTAL
         alias Numeric_value = Int32
-            # ^^^^^^^^^^^^^ error: Type name should be camelcased: NumericValue, but it was Numeric_value
+            # ^^^^^^^^^^^^^ error: Type name should be camelcased: `NumericValue`, not `Numeric_value`
         CRYSTAL
     end
   end

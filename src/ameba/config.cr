@@ -1,4 +1,6 @@
+require "semantic_version"
 require "yaml"
+require "ecr/processor"
 require "./glob_utils"
 
 # A configuration entry for `Ameba::Runner`.
@@ -38,12 +40,13 @@ class Ameba::Config
   include GlobUtils
 
   AVAILABLE_FORMATTERS = {
-    progress: Formatter::DotFormatter,
-    todo:     Formatter::TODOFormatter,
-    flycheck: Formatter::FlycheckFormatter,
-    silent:   Formatter::BaseFormatter,
-    disabled: Formatter::DisabledFormatter,
-    json:     Formatter::JSONFormatter,
+    progress:         Formatter::DotFormatter,
+    todo:             Formatter::TODOFormatter,
+    flycheck:         Formatter::FlycheckFormatter,
+    silent:           Formatter::BaseFormatter,
+    disabled:         Formatter::DisabledFormatter,
+    json:             Formatter::JSONFormatter,
+    "github-actions": Formatter::GitHubActionsFormatter,
   }
 
   XDG_CONFIG_HOME = ENV.fetch("XDG_CONFIG_HOME", "~/.config")
@@ -60,8 +63,15 @@ class Ameba::Config
     !lib
   )
 
+  Ameba.ecr_supported? do
+    DEFAULT_GLOBS << "**/*.ecr"
+  end
+
   getter rules : Array(Rule::Base)
   property severity = Severity::Convention
+
+  # Returns an ameba version to be used by `Ameba::Runner`.
+  property version : SemanticVersion?
 
   # Returns a list of paths (with wildcards) to files.
   # Represents a list of sources to be inspected.
@@ -87,7 +97,7 @@ class Ameba::Config
   property? autocorrect = false
 
   # Returns a filename if reading source file from STDIN.
-  property stdin_filename : String? = nil
+  property stdin_filename : String?
 
   @rule_groups : Hash(String, Array(Rule::Base))
 
@@ -95,11 +105,19 @@ class Ameba::Config
   #
   # `Config.load` uses this constructor to instantiate new config by YAML file.
   protected def initialize(config : YAML::Any)
+    if config.raw.nil?
+      config = YAML.parse("{}")
+    elsif !config.raw.is_a?(Hash)
+      raise "Invalid config file format"
+    end
     @rules = Rule.rules.map &.new(config).as(Rule::Base)
     @rule_groups = @rules.group_by &.group
     @excluded = load_array_section(config, "Excluded")
     @globs = load_array_section(config, "Globs", DEFAULT_GLOBS)
 
+    if version = config["Version"]?.try(&.as_s).presence
+      self.version = version
+    end
     if formatter_name = load_formatter_name(config)
       self.formatter = formatter_name
     end
@@ -154,19 +172,17 @@ class Ameba::Config
   # ```
   # config = Ameba::Config.load
   # config.sources # => list of default sources
-  # config.globs = ["**/*.cr"]
+  # config.globs = ["**/*.cr", "**/*.ecr"]
   # config.excluded = ["spec"]
   # config.sources # => list of sources pointing to files found by the wildcards
   # ```
   def sources
-    srcs = (find_files_by_globs(globs) - find_files_by_globs(excluded))
-      .map { |path| Source.new File.read(path), path }
-
     if file = stdin_filename
-      srcs << Source.new(STDIN.gets_to_end, file)
+      [Source.new(STDIN.gets_to_end, file)]
+    else
+      (find_files_by_globs(globs) - find_files_by_globs(excluded))
+        .map { |path| Source.new File.read(path), path }
     end
-
-    srcs
   end
 
   # Returns a formatter to be used while inspecting files.
@@ -192,6 +208,16 @@ class Ameba::Config
       raise "Unknown formatter `#{name}`. Use one of #{Config.formatter_names}."
     end
     @formatter = formatter.new
+  end
+
+  # Sets version from string.
+  #
+  # ```
+  # config = Ameba::Config.load
+  # config.version = "1.6.0"
+  # ```
+  def version=(version : String)
+    @version = SemanticVersion.parse(version)
   end
 
   # Updates rule properties.
@@ -329,14 +355,24 @@ class Ameba::Config
         @[YAML::Field(key: "Excluded")]
         property excluded : Array(String)?
       {% end %}
+
+      {% unless properties["since_version".id] %}
+        @[YAML::Field(key: "SinceVersion")]
+        property since_version : String?
+      {% end %}
+
+      def since_version : SemanticVersion?
+        if version = @since_version
+          SemanticVersion.parse(version)
+        end
+      end
     end
 
     macro included
       GROUP_SEVERITY = {
-        Documentation: Ameba::Severity::Warning,
-        Lint:          Ameba::Severity::Warning,
-        Metrics:       Ameba::Severity::Warning,
-        Performance:   Ameba::Severity::Warning,
+        Lint:        Ameba::Severity::Warning,
+        Metrics:     Ameba::Severity::Warning,
+        Performance: Ameba::Severity::Warning,
       }
 
       class_getter default_severity : Ameba::Severity do

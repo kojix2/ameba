@@ -9,7 +9,7 @@ module Ameba::Rule::Lint
   # end
   # ```
   #
-  # as the predicate name is correct and the comment directive does not
+  # As the predicate name is correct and the comment directive does not
   # have any effect, the snippet should be written as the following:
   #
   # ```
@@ -26,6 +26,7 @@ module Ameba::Rule::Lint
   # ```
   class UnneededDisableDirective < Base
     properties do
+      since_version "0.5.0"
       description "Reports unneeded disable directives in comments"
     end
 
@@ -46,7 +47,7 @@ module Ameba::Rule::Lint
       return unless directive[:action] == "disable"
 
       directive[:rules].reject do |rule_name|
-        next if rule_name == self.name
+        next if rule_name == name
         source.issues.any? do |issue|
           issue.rule.name == rule_name &&
             issue.disabled? &&
